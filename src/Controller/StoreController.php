@@ -2,76 +2,88 @@
 
 namespace App\Controller;
 
-use App\Entity\Stores;
+use App\Entity\Store;
 use App\Repository\StoreRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('api/store', name: 'app_api_store_')]
 class StoreController extends AbstractController
 {
-    #[Route(name: 'new', methods: 'POST')]
-    public function new(): Response 
+
+    public function __construct(
+        private EntityManagerInterface $manager,
+        private StoreRepository $repository,
+        private SerializerInterface $serializer,
+        private UrlGeneratorInterface $urlGenerator,
+    ){
+    }
+
+    #[Route(methods: 'POST')]
+    public function new(Request $request): JsonResponse 
     {
-        $store = new Store();
-        $store->setName('Gamestore');
-        $store->setDescription('La meilleure boutique en ligne de Jeux Vidéo');
+        $store = $this->serializer->deserialize($request->getContent(), Store::class, 'json');
         $store->setCreatedAt(new DateTimeImmutable());
 
-        // Tell Doctrine you want to (eventually) save the restaurant (no queries yet)
         $this->manager->persist($store);
-        // Actually executes the queries (i.e. the INSERT query)
         $this->manager->flush();
 
-        return $this->json(
-            ['message' => "store resource created with {$store->getId()} id"],
-            Response::HTTP_CREATED,
-        );
+        $responseData = $this->serializer->serialize($store, 'json');
+        $location = $this->urlGenerator->generate('/{id}', ['id'=>$store->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        return new JsonResponse($responseData, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
-    #[Route('/show', name: 'show', methods: 'GET')]
-    public function show(int $id): Response 
-    {
-        $store = $this->repository->findOneBy(['id' => $id]);
-
-        if (!$store) {
-            throw $this->createNotFoundException("No store found for {$id} id");
-        }
-
-        return $this->json(
-            ['message' => "A store was found : {$store->getName()} for {$store->getId()} id"]
-        );
-    }
-
-    #[Route('/edit', name: 'edit', methods: 'PUT')]
-    public function edit(int $id): Response 
-    {
-        $store = $this->repository->findOneBy(['id' => $id]);
-
-        if (!$store) {
-            throw $this->createNotFoundException("No store found for {$id} id");
-        }
-
-        $store->setName('store name updated');
-        $this->manager->flush();
-
-        return $this->redirectToRoute('app_api_store_show', ['id' => $store->getId()]);
-    }
-
-    #[Route('/delete', name: 'delete', methods: 'DELETE')]
-    public function delete(int $id): Response 
+    #[Route('/{id}', name: 'show', methods: 'GET')]
+    public function show(int $id): JsonResponse 
     {
         $store = $this->repository->findOneBy(['id' => $id]);
         if (!$store) {
-            throw $this->createNotFoundException("No store found for {$id} id");
+            $responseData = $this->serializer->serialize($store, 'json');
+            return new JsonResponse($responseData, Response::HTTP_OK, [], true);
         }
 
-        $this->manager->remove($store);
-        $this->manager->flush();
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+    }
 
-        return $this->json(['message' => "store resource deleted"], Response::HTTP_NO_CONTENT);
+    #[Route('/{id}', name: 'edit', methods: 'PUT')]
+    public function edit(int $id, Request $request): JsonResponse 
+    {
+        $store = $this->repository->findOneBy(['id' => $id]);
+        if (!$store) {
+            $store = $this->serializer->deserialize(
+                $request->getContent(),
+                Store::class,
+                'json',
+                [AbstractNormalizer::OBJET_TO_POPULATE => $store]
+            );
+            $store->setUpdatedAt(new DateTimeImmutable());
+
+            $this->manager->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+    }
+
+    #[Route('/{id}', name: 'delete', methods: 'DELETE')]
+    public function delete(int $id): JsonResponse 
+    {
+        $store = $this->repository->findOneBy(['id' => $id]);
+        if (!$store) {
+            $this->manager->remove($store);
+            $this->manager->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 }

@@ -110,6 +110,18 @@ class Product
         return $this;
     }
 
+    public function getName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setName(string $name): static
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
     public function getStockId(): ?string
     {
         return $this->stock_id;
