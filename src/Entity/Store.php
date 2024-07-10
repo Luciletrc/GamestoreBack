@@ -23,12 +23,14 @@ class Store
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $openingTime = null;
 
-    #[ORM\ManyToOne(inversedBy: 'stores')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $owner = null;
+    #[ORM\Column]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $updatedAt = null;
 
     public function getId(): ?int
     {
@@ -83,14 +85,26 @@ class Store
         return $this;
     }
 
-    public function getOwner(): ?User
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
-        return $this->owner;
+        return $this->createdAt;
     }
 
-    public function setOwner(?User $owner): static
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        $this->owner = $owner;
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }

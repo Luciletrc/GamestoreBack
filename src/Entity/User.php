@@ -45,13 +45,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $updatedAt;
+    private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(length: 255)]
     private ?string $apiToken;
-
-    #[ORM\OneToMany(mappedBy: 'user_id', targetEntity: Order::class)]
-    private Collection $user_id;
 
     public function __construct()
     {

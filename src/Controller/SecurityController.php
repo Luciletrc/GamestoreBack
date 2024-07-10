@@ -69,11 +69,6 @@ class SecurityController extends AbstractController
                         example: '31al4687357yoieu6876468e87'
                     ),
                     new OA\Property(
-                        property: 'username',
-                        type: 'string',
-                        example: 'adresse@mail.com'
-                    ),
-                    new OA\Property(
                         property: 'role',
                         type: 'string',
                         example: 'ROLE_USER'

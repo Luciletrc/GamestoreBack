@@ -12,30 +12,93 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use OpenApi\Attributes as OA;
+use OpenApi\Attributes\{RequestBody, Property, JsonContent, MediaType, Schema};
+use Symfony\Component\Uid\Uuid;
 
 #[Route('api/store', name: 'app_api_store_')]
 class StoreController extends AbstractController
 {
+    private EntityManagerInterface $manager;
+    private StoreRepository $repository;
+    private SerializerInterface $serializer;
+    private UrlGeneratorInterface $urlGenerator;
 
     public function __construct(
-        private EntityManagerInterface $manager,
-        private StoreRepository $repository,
-        private SerializerInterface $serializer,
-        private UrlGeneratorInterface $urlGenerator,
-    ){
+        EntityManagerInterface $manager,
+        StoreRepository $repository,
+        SerializerInterface $serializer,
+        UrlGeneratorInterface $urlGenerator
+    ) {
+        $this->manager = $manager;
+        $this->repository = $repository;
+        $this->serializer = $serializer;
+        $this->urlGenerator = $urlGenerator;
     }
 
     #[Route(methods: 'POST')]
+    #[OA\Post(
+        path:"/api/store",
+        summary: "Créer une boutique",
+        requestBody: new RequestBody(
+            required: true,
+            description: "Données de la boutique à créer",
+            content: [new MediaType(mediaType: "application/json",
+            schema: new Schema(type: "object", properties: [new Property(
+                property: "name",
+                type: "string",
+                example: "Nom de la boutique"
+            ),
+            new Property(
+                property: "description",
+                type: "string",
+                example: "Description de la boutique"
+            )]))]
+        ),
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Boutique créée avec succès',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: "id",
+                        type: "integer",
+                        example: "1"
+                    ),
+                    new OA\Property(
+                        property: "name",
+                        type: "string",
+                        example: "Nom de la boutique"
+                    ),
+                    new OA\Property(
+                        property: 'description',
+                        type: 'string',
+                        example: 'Description de la boutique'
+                    ),
+                    new OA\Property(
+                        property: 'createdAt',
+                        type: 'string',
+                        format: 'date-time'
+                    )
+                ]
+            )
+        )
+    )]
     public function new(Request $request): JsonResponse 
     {
         $store = $this->serializer->deserialize($request->getContent(), Store::class, 'json');
         $store->setCreatedAt(new DateTimeImmutable());
+        $store->setUuid(Uuid::v4());
 
         $this->manager->persist($store);
         $this->manager->flush();
 
         $responseData = $this->serializer->serialize($store, 'json');
-        $location = $this->urlGenerator->generate('/{id}', ['id'=>$store->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $location = $this->urlGenerator->generate('/{id}', ['id' => $store->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($responseData, Response::HTTP_CREATED, ["Location" => $location], true);
     }
@@ -61,7 +124,7 @@ class StoreController extends AbstractController
                 $request->getContent(),
                 Store::class,
                 'json',
-                [AbstractNormalizer::OBJET_TO_POPULATE => $store]
+                [AbstractNormalizer::OBJECT_TO_POPULATE => $store]
             );
             $store->setUpdatedAt(new DateTimeImmutable());
 
