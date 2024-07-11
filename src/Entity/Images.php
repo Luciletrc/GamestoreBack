@@ -24,10 +24,6 @@ class Images
     #[ORM\JoinColumn(nullable: false)]
     private ?Product $product = null;
 
-    #[ORM\ManyToOne(inversedBy: 'image_id')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Product $product_id = null;
-
     public function getId(): ?int
     {
         return $this->id;

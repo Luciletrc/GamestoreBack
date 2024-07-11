@@ -17,7 +17,7 @@ class OrderStatus
     #[ORM\Column(type: 'uuid')]
     private ?Uuid $uuid = null;
 
-    #[ORM\OneToOne(inversedBy: 'orderStatus_id', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(inversedBy: 'orderStatus', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     private ?Order $order_id = null;
 

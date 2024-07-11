@@ -25,9 +25,6 @@ class Category
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: Product::class, orphanRemoval: true)]
     private Collection $product;
 
-    #[ORM\OneToOne(mappedBy: 'category_id', cascade: ['persist', 'remove'])]
-    private ?Product $category_id = null;
-
     public function __construct()
     {
         $this->product = new ArrayCollection();
@@ -88,23 +85,6 @@ class Category
                 $product->setCategory(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getCategoryId(): ?Product
-    {
-        return $this->category_id;
-    }
-
-    public function setCategoryId(Product $category_id): static
-    {
-        // set the owning side of the relation if necessary
-        if ($category_id->getCategoryId() !== $this) {
-            $category_id->setCategoryId($this);
-        }
-
-        $this->category_id = $category_id;
 
         return $this;
     }

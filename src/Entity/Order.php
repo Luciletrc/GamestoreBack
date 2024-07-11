@@ -20,11 +20,11 @@ class Order
     #[ORM\Column(type: 'uuid')]
     private ?Uuid $uuid = null;
 
-    #[ORM\ManyToOne(inversedBy: 'user_id')]
+    #[ORM\ManyToOne(inversedBy: 'orders')]
     private ?User $user_id = null;
-
-    #[ORM\OneToMany(mappedBy: 'products_id', targetEntity: Product::class)]
-    private Collection $product_id;
+    
+    #[ORM\OneToMany(mappedBy: 'order_id', targetEntity: Product::class)]
+    private Collection $product_id;    
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -32,7 +32,7 @@ class Order
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[ORM\OneToOne(mappedBy: 'order_id', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(mappedBy: 'order', cascade: ['persist', 'remove'])]
     private ?OrderStatus $orderStatus_id = null;
 
     public function __construct()
@@ -95,6 +95,13 @@ class Order
                 $productId->setProductsId(null);
             }
         }
+
+        return $this;
+    }
+    
+    public function setProductId(Collection $product_id): self
+    {
+        $this->product_id = $product_id;
 
         return $this;
     }

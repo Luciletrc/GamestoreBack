@@ -20,12 +20,8 @@ class Product
     #[ORM\Column(type: 'uuid')]
     private ?Uuid $uuid = null;
 
-    #[ORM\OneToMany(mappedBy: 'product_id', targetEntity: Images::class, orphanRemoval: true)]
-    private Collection $image_id;
-
-    #[ORM\OneToOne(inversedBy: 'category_id', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Category $category_id = null;
+    #[ORM\OneToMany(mappedBy: 'images', targetEntity: Images::class, orphanRemoval: true)]
+    private Collection $image;
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
@@ -38,9 +34,12 @@ class Product
 
     #[ORM\Column]
     private ?float $price = null;
-
-    #[ORM\OneToMany(mappedBy: 'product_id', targetEntity: Stock::class, orphanRemoval: true)]
-    private Collection $product_id;
+    
+    #[ORM\ManyToOne(inversedBy: 'product')]
+    private ?Store $store = null;
+    
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: Product::class)]
+    private Collection $product;    
 
     #[ORM\ManyToOne(inversedBy: 'product_id')]
     private ?Order $order_id = null;
@@ -71,27 +70,27 @@ class Product
     /**
      * @return Collection<int, Images>
      */
-    public function getImageId(): Collection
+    public function getImages(): Collection
     {
-        return $this->image_id;
+        return $this->images;
     }
 
-    public function addImageId(Images $imageId): static
+    public function addImage(Images $image): self
     {
-        if (!$this->image_id->contains($imageId)) {
-            $this->image_id->add($imageId);
-            $imageId->setProductId($this);
+        if (!$this->images->contains($image)) {
+            $this->images[] = $image;
+            $image->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeImageId(Images $imageId): static
+    public function removeImage(Images $image): self
     {
-        if ($this->image_id->removeElement($imageId)) {
+        if ($this->images->removeElement($image)) {
             // set the owning side to null (unless already changed)
-            if ($imageId->getProductId() === $this) {
-                $imageId->setProductId(null);
+            if ($image->getProduct() === $this) {
+                $image->setProduct(null);
             }
         }
 
@@ -106,6 +105,18 @@ class Product
     public function setCategoryId(Category $category_id): static
     {
         $this->category_id = $category_id;
+
+        return $this;
+    }
+
+    public function getStore(): ?Store
+    {
+        return $this->store;
+    }
+
+    public function setStore(?Store $store): self
+    {
+        $this->store = $store;
 
         return $this;
     }
@@ -173,27 +184,27 @@ class Product
     /**
      * @return Collection<int, Stock>
      */
-    public function getProductId(): Collection
+    public function getProducts(): Collection
     {
-        return $this->product_id;
+        return $this->products;
     }
 
-    public function addProductId(Stock $productId): static
+    public function addProduct(Product $product): self
     {
-        if (!$this->product_id->contains($productId)) {
-            $this->product_id->add($productId);
-            $productId->setProductId($this);
+        if (!$this->products->contains($product)) {
+            $this->products[] = $product;
+            $product->setOrder($this);
         }
 
         return $this;
     }
 
-    public function removeProductId(Stock $productId): static
+    public function removeProduct(Product $product): self
     {
-        if ($this->product_id->removeElement($productId)) {
+        if ($this->products->removeElement($product)) {
             // set the owning side to null (unless already changed)
-            if ($productId->getProductId() === $this) {
-                $productId->setProductId(null);
+            if ($product->getOrder() === $this) {
+                $product->setOrder(null);
             }
         }
 

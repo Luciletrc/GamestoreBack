@@ -34,6 +34,16 @@ class SecurityController extends AbstractController
             description: "Données d'inscription nouvel utilisateur",
             content: [new MediaType(mediaType: "application/json",
             schema: new Schema(type: "object", properties: [new Property(
+                property: "Nom",
+                type: "string",
+                example: "Nom"
+            ),
+            new Property(
+                property: "Prénom",
+                type: "string",
+                example: "Prénom"
+            ),
+            new Property(
                 property: "email",
                 type: "string",
                 example: "adresse@mail.com"
@@ -72,10 +82,7 @@ class SecurityController extends AbstractController
                         property: 'role',
                         type: 'string',
                         example: 'ROLE_USER'
-                    )
-                ]
-            )
-        )
+                    )]))
     )]
     
 
@@ -139,10 +146,7 @@ class SecurityController extends AbstractController
                         property: 'role',
                         type: 'string',
                         example: 'ROLE_USER'
-                    )
-                ]
-            )
-        )
+                    )]))
     )]
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
@@ -157,4 +161,95 @@ class SecurityController extends AbstractController
             'roles' => $user->getRoles(),
             ]);
     }
+
+    #[Route('/account/me', name: 'me', methods: 'GET')]
+    #[OA\Get(
+        path: "/api/account/me",
+        summary: "Récupérer toutes les informations de l'objet User",
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Connexion réussie',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: "username",
+                        type: "string",
+                        example: "Nom d'utilisateur"
+                    ),
+                    new OA\Property(
+                        property: 'apiToken',
+                        type: 'string',
+                        example: '31al4687357yoieu6876468e87'
+                    ),
+                    new OA\Property(
+                        property: 'role',
+                        type: 'string',
+                        example: 'ROLE_USER'
+                    )]))
+    )]
+    public function me(): JsonResponse
+    {
+        $user = $this->getUser();
+
+        $responseData = $this->serializer->serialize($user, 'json');
+
+        return new JsonResponse($responseData, Response::HTTP_OK, [], true);
+    }
+
+    // #[Route('/account/edit', name: 'edit', methods: 'PUT')]
+    // #[OA\Put(
+    //     path: "/api/account/edit",
+    //     summary: "Modifier un ou plusieurs champs de son compte utilisateur",
+    //     requestBody: new RequestBody(
+    //         required: true,
+    //         description: "Données de connexion de l'utilisateur",
+    //         content: [new MediaType(mediaType: "application/json",
+    //         schema: new Schema(type: "object", properties: [new Property(
+    //             property: "username",
+    //             type: "string",
+    //             example: "adresse@mail.com"
+    //         ),
+    //         new Property(
+    //             property: "password",
+    //             type: "string",
+    //             example: "Mot de Passe"
+    //         )]))]
+    //     ),
+    // )]
+    // #[OA\Response(
+    //     response: 200,
+    //     description: 'Connexion réussie',
+    //     content: new OA\JsonContent(
+    //         type: 'array',
+    //         items: new OA\Items(
+    //             type: 'object',
+    //             properties: [
+    //                 new OA\Property(
+    //                     property: "username",
+    //                     type: "string",
+    //                     example: "Nom d'utilisateur"
+    //                 ),
+    //                 new OA\Property(
+    //                     property: 'apiToken',
+    //                     type: 'string',
+    //                     example: '31al4687357yoieu6876468e87'
+    //                 ),
+    //                 new OA\Property(
+    //                     property: 'role',
+    //                     type: 'string',
+    //                     example: 'ROLE_USER'
+    //                 )]))
+    // )]
+    // public function metoo(): JsonResponse // A supprimer !
+    // {
+    //     $user = $this->getUser();
+
+    //     $responseData = $this->serializer->serialize($user, 'json');
+
+    //     return new JsonResponse($responseData, Response::HTTP_OK, [], true);
+    // }
 }

@@ -23,8 +23,13 @@ class Store
     #[ORM\Column(length: 255)]
     private ?string $description = null;
 
+
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $openingTime = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $closingTime = null;
+
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -49,6 +54,11 @@ class Store
         return $this;
     }
 
+    public function __toString(): string
+    {
+        return $this->name; // Remplacez par le champ approprié (par exemple, name)
+    }
+    
     public function getName(): ?string
     {
         return $this->name;
@@ -78,12 +88,25 @@ class Store
         return $this->openingTime;
     }
 
-    public function setOpeningTime(\DateTimeImmutable $openingTime): static
+    public function setOpeningTime(?\DateTimeImmutable $openingTime): static
     {
         $this->openingTime = $openingTime;
 
         return $this;
     }
+
+    public function getClosingTime(): ?\DateTimeImmutable
+    {
+        return $this->closingTime;
+    }
+
+    public function setClosingTime(?\DateTimeImmutable $closingTime): static
+    {
+        $this->closingTime = $closingTime;
+
+        return $this;
+    }
+
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {

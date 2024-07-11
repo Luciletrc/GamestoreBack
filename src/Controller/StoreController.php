@@ -53,6 +53,16 @@ class StoreController extends AbstractController
                 property: "description",
                 type: "string",
                 example: "Description de la boutique"
+            ),
+            new Property(
+                property: "Horaires d'ouverture",
+                type: "string",
+                format: "date-time"
+            ),
+            new Property(
+                property: "Horaires de fermeture",
+                type: "string",
+                format: "date-time"
             )]))]
         ),
     )]
@@ -83,10 +93,17 @@ class StoreController extends AbstractController
                         property: 'createdAt',
                         type: 'string',
                         format: 'date-time'
-                    )
-                ]
-            )
-        )
+                    ),
+                    new Property(
+                        property: "Horaires d'ouverture",
+                        type: "string",
+                        format: "date-time"
+                    ),
+                    new Property(
+                        property: "Horaires de fermeture",
+                        type: "string",
+                        format: "date-time"
+                    )]))
     )]
     public function new(Request $request): JsonResponse 
     {
@@ -104,6 +121,60 @@ class StoreController extends AbstractController
     }
 
     #[Route('/{id}', name: 'show', methods: 'GET')]
+    #[OA\Get(
+        path:"/api/store/{id}",
+        summary: "Afficher une boutique par son id"
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'ID de la boutique à afficher',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Boutique trouvée avec succès',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: "id",
+                        type: "integer",
+                        example: "1"
+                    ),
+                    new OA\Property(
+                        property: "name",
+                        type: "string",
+                        example: "Nom de la boutique"
+                    ),
+                    new OA\Property(
+                        property: 'description',
+                        type: 'string',
+                        example: 'Description de la boutique'
+                    ),
+                    new OA\Property(
+                        property: 'createdAt',
+                        type: 'string',
+                        format: 'date-time'
+                    ),
+                    new Property(
+                        property: "Horaires d'ouverture",
+                        type: "string",
+                        format: "date-time"
+                    ),
+                    new Property(
+                        property: "Horaires de fermeture",
+                        type: "string",
+                        format: "date-time"
+                    )]))
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Boutique non trouvée'
+    )]
     public function show(int $id): JsonResponse 
     {
         $store = $this->repository->findOneBy(['id' => $id]);
@@ -116,6 +187,68 @@ class StoreController extends AbstractController
     }
 
     #[Route('/{id}', name: 'edit', methods: 'PUT')]
+    #[OA\Put(
+        path:"/api/store/{id}",
+        summary: "Modifier une boutique par son id",
+        requestBody: new RequestBody(
+            required: true,
+            description: "Données de la boutique à modifier",
+            content: [new MediaType(mediaType: "application/json",
+            schema: new Schema(type: "object", properties: [new Property(
+                property: "name",
+                type: "string",
+                example: "Nom de la boutique"
+            ),
+            new Property(
+                property: "description",
+                type: "string",
+                example: "Description de la boutique"
+            )]))]
+        ),
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'ID de la boutique à modifier',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Informations de la boutique modifiées avec succès',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: "id",
+                        type: "integer",
+                        example: "1"
+                    ),
+                    new OA\Property(
+                        property: "name",
+                        type: "string",
+                        example: "Nom de la boutique"
+                    ),
+                    new OA\Property(
+                        property: 'description',
+                        type: 'string',
+                        example: 'Description de la boutique'
+                    ),
+                    new OA\Property(
+                        property: 'createdAt',
+                        type: 'string',
+                        format: 'date-time'
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Echec de la mofication'
+    )]
     public function edit(int $id, Request $request): JsonResponse 
     {
         $store = $this->repository->findOneBy(['id' => $id]);
@@ -137,6 +270,25 @@ class StoreController extends AbstractController
     }
 
     #[Route('/{id}', name: 'delete', methods: 'DELETE')]
+    #[OA\Delete(
+        path:"/api/store/{id}",
+        summary: "Supprimer une boutique par son id"
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'ID de la boutique à supprimer',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Boutique supprimée avec succès',        
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Impossible de supprimer la boutique'
+    )]
     public function delete(int $id): JsonResponse 
     {
         $store = $this->repository->findOneBy(['id' => $id]);
