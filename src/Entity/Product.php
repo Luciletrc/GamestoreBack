@@ -20,8 +20,8 @@ class Product
     #[ORM\Column(type: 'uuid')]
     private ?Uuid $uuid = null;
 
-    #[ORM\OneToMany(mappedBy: 'images', targetEntity: Images::class, orphanRemoval: true)]
-    private Collection $image;
+    #[ORM\OneToMany(targetEntity: Images::class, mappedBy: 'product')]
+    private Collection $images;
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
@@ -34,20 +34,24 @@ class Product
 
     #[ORM\Column]
     private ?float $price = null;
-    
-    #[ORM\ManyToOne(inversedBy: 'product')]
-    private ?Store $store = null;
-    
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: Product::class)]
-    private Collection $product;    
 
-    #[ORM\ManyToOne(inversedBy: 'product_id')]
-    private ?Order $order_id = null;
+    #[ORM\Column]
+    private ?int $stock = null;
+
+    #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'product')]
+    private ?Category $category = null;
+    
+    #[ORM\ManyToMany(targetEntity: Store::class, mappedBy: 'products')] //Plusieurs jeux peuvent être dispo dans plusieurs boutique
+    private Collection $stores;
+    
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: Order::class)]
+    private Collection $orders;
 
     public function __construct()
     {
-        $this->image_id = new ArrayCollection();
-        $this->product_id = new ArrayCollection();
+        $this->images = new ArrayCollection();
+        $this->stores = new ArrayCollection();
+        $this->orders = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -97,26 +101,23 @@ class Product
         return $this;
     }
 
-    public function getCategoryId(): ?Category
+    public function getStores(): Collection
     {
-        return $this->category_id;
+        return $this->stores;
     }
 
-    public function setCategoryId(Category $category_id): static
+    public function addStore(Store $store): self
     {
-        $this->category_id = $category_id;
+        if (!$this->stores->contains($store)) {
+            $this->stores[] = $store;
+        }
 
         return $this;
     }
 
-    public function getStore(): ?Store
+    public function removeStore(Store $store): self
     {
-        return $this->store;
-    }
-
-    public function setStore(?Store $store): self
-    {
-        $this->store = $store;
+        $this->stores->removeElement($store);
 
         return $this;
     }
@@ -129,18 +130,6 @@ class Product
     public function setName(string $name): static
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    public function getStockId(): ?string
-    {
-        return $this->stock_id;
-    }
-
-    public function setStockId(string $stock_id): static
-    {
-        $this->stock_id = $stock_id;
 
         return $this;
     }
@@ -181,44 +170,56 @@ class Product
         return $this;
     }
 
-    /**
-     * @return Collection<int, Stock>
-     */
-    public function getProducts(): Collection
+    public function getStock(): ?int
     {
-        return $this->products;
+        return $this->stock;
     }
 
-    public function addProduct(Product $product): self
+    public function setStock(int $stock): static
     {
-        if (!$this->products->contains($product)) {
-            $this->products[] = $product;
-            $product->setOrder($this);
+        $this->stock = $stock;
+
+        return $this;
+    }
+
+    public function getCategory(): ?Category
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?Category $category): static
+    {
+        $this->category = $category;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Order>
+     */
+    public function getOrders(): Collection
+    {
+        return $this->orders;
+    }
+
+    public function addOrder(Order $order): self
+    {
+        if (!$this->orders->contains($order)) {
+            $this->orders[] = $order;
+            $order->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeProduct(Product $product): self
+    public function removeOrder(Order $order): self
     {
-        if ($this->products->removeElement($product)) {
+        if ($this->orders->removeElement($order)) {
             // set the owning side to null (unless already changed)
-            if ($product->getOrder() === $this) {
-                $product->setOrder(null);
+            if ($order->getProduct() === $this) {
+                $order->setProduct(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getProductsId(): ?Order
-    {
-        return $this->products_id;
-    }
-
-    public function setProductsId(?Order $products_id): static
-    {
-        $this->products_id = $products_id;
 
         return $this;
     }

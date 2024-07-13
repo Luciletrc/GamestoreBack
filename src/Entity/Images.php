@@ -20,9 +20,8 @@ class Images
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\ManyToOne(inversedBy: 'images')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Product $product = null;
+    #[ORM\ManyToOne(targetEntity: Product::class, inversedBy: 'images')]
+    private ?Product $product;
 
     public function getId(): ?int
     {

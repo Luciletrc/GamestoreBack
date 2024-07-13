@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\StoreRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
@@ -18,11 +20,10 @@ class Store
     private ?Uuid $uuid = null;
 
     #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    private ?string $storeName = null;
 
     #[ORM\Column(length: 255)]
     private ?string $description = null;
-
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $openingTime = null;
@@ -30,12 +31,19 @@ class Store
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $closingTime = null;
 
-
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
+
+    #[ORM\ManyToMany(targetEntity: Product::class, mappedBy: 'stores')]
+    private Collection $products;
+
+    public function __construct()
+    {
+        $this->products = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -56,17 +64,41 @@ class Store
 
     public function __toString(): string
     {
-        return $this->name; // Remplacez par le champ approprié (par exemple, name)
-    }
-    
-    public function getName(): ?string
-    {
-        return $this->name;
+        return $this->storeName; // Remplacez par le champ approprié (par exemple, name)
     }
 
-    public function setName(string $name): static
+    public function getProducts(): Collection
     {
-        $this->name = $name;
+        return $this->products;
+    }
+
+    public function addProduct(Product $product): self
+    {
+        if (!$this->products->contains($product)) {
+            $this->products[] = $product;
+            $product->addStore($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProduct(Product $product): self
+    {
+        if ($this->products->removeElement($product)) {
+            $product->removeStore($this);
+        }
+
+        return $this;
+    }
+    
+    public function getStoreName(): ?string
+    {
+        return $this->storeName;
+    }
+
+    public function setStoreName(string $storeName): static
+    {
+        $this->storeName = $storeName;
 
         return $this;
     }

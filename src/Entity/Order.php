@@ -24,7 +24,10 @@ class Order
     private ?User $user_id = null;
     
     #[ORM\OneToMany(mappedBy: 'order_id', targetEntity: Product::class)]
-    private Collection $product_id;    
+    private Collection $product_id;
+
+    #[ORM\Column(type: 'float')]
+    private ?float $total = null;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
@@ -102,6 +105,31 @@ class Order
     public function setProductId(Collection $product_id): self
     {
         $this->product_id = $product_id;
+
+        return $this;
+    }
+
+    public function getTotal(): ?float
+    {
+        return $this->total;
+    }
+
+    public function setTotal(float $total): static
+    {
+        $this->total = $total;
+
+        return $this;
+    }
+
+    public function calculateTotal(): static
+    {
+        $total = 0;
+
+        foreach ($this->getProductId() as $product) {
+            $total += $product->getPrice();
+        }
+
+        $this->setTotal($total);
 
         return $this;
     }

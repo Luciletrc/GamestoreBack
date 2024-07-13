@@ -2,34 +2,35 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\{Category, Product};
-use App\Service\Utils;
-use DateTimeImmutable;
+use App\Entity\Category;
 use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 use Doctrine\Persistence\ObjectManager;
-use Exception;
 use Symfony\Component\Uid\Uuid;
 
 class CategoryFixtures extends Fixture implements DependentFixtureInterface
 {
-    /** @throws Exception */
     public function load(ObjectManager $manager): void
     {
-        for ($i = 1; $i <= 5; $i++) {
-            /** @var Product $product */
-            $product = $this->getReference("Product" . random_int(1, 20));
-            $product_id = $this->getReference("Product_id" . random_int(1, 20));
-            $title = "Category n°$i";
+        for ($i_category = 1; $i_category <= 5; $i_category++) {
+
+            $title = "Catégorie n°$i_category";
 
             $category = (new Category())
                 ->setUuid(Uuid::v4())
-                ->setName($title)
-                ->setProductId($product_id);
+                ->setName($title);
+
+            // Link the category to multiple products
+            for ($i_product = 1; $i_product <= 20; $i_product++) {
+                if ($i_product % $i_category == 0) { // Just an example condition to link category to product
+                    $product = $this->getReference('Jeux' . $i_product);
+                    $category->addProduct($product);
+                }
+            }
 
             $manager->persist($category);
-            $this->addReference("Category" . $i, $category);
+
+            $this->addReference('Catégorie' . $i_category, $category);
         }
 
         $manager->flush();

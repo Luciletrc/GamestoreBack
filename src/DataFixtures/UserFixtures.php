@@ -16,7 +16,6 @@ class UserFixtures extends Fixture
     {
     }
 
-
     /** @throws Exception */
     public function load(ObjectManager $manager): void
     {
@@ -28,13 +27,14 @@ class UserFixtures extends Fixture
                 ->setEmail("email.$i_user@studi.fr")
                 ->setUsername("email.$i_user@studi.fr")
                 ->setCreatedAt(new DateTimeImmutable());
-
+        
             $user->setPassword($this->passwordHasher->hashPassword($user, "password$i_user"));
-
+        
             $manager->persist($user);
-            $this->addReference("User" . $i_user, $user);
+            
+            $this->addReference('User' . $i_user, $user);
         }
-
+        
         $manager->flush();
     }
 }

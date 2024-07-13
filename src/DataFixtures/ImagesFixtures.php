@@ -17,16 +17,16 @@ class ImagesFixtures extends Fixture implements DependentFixtureInterface
     /** @throws Exception */
     public function load(ObjectManager $manager): void
     {
-        for ($i = 1; $i <= 20; $i++) {
+        for ($i_images = 1; $i_images <= 20; $i_images++) {
+            $title = "Image n°$i_images";
+
             /** @var Product $product */
-            $product = $this->getReference("Product" . $i);
-            $product_id = $this->getReference("Product_id" . $i);
-            $title = "Image n°$i";
+            $product = $this->getReference('Jeux' . $i_images);
 
             $images = (new Images())
                 ->setUuid(Uuid::v4())
                 ->setName($title)
-                ->setProductId($product_id);
+                ->setProductId($product); // Ici, on associe l'image au produit
 
             $manager->persist($images);
         }
@@ -36,6 +36,7 @@ class ImagesFixtures extends Fixture implements DependentFixtureInterface
 
     public function getDependencies(): array
     {
-        return [ProductFixtures::class];
+        return [ProductFixtures::class, StoreFixtures::class];
     }
 }
+

@@ -15,16 +15,21 @@ class StoreFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         for ($i_store = 1; $i_store <= 5; $i_store++) {
+
+            /** @var Store $store */
+            $title = "Article n°$i_store";
+
             $store = (new Store())
                 ->setUuid(Uuid::v4())
-                ->setName("Store n°$i_store")
+                ->setStoreName($title)
                 ->setDescription("Description n°$i_store")
                 ->setOpeningTime(new DateTimeImmutable())
                 ->setClosingTime(new DateTimeImmutable())
                 ->setCreatedAt(new DateTimeImmutable());
 
             $manager->persist($store);
-            $this->addReference("Store" . $i_store, $store);
+            $this->addReference($title, $store);
+            $this->addReference('Store' . $i_store, $store);
         }
 
         $manager->flush();
