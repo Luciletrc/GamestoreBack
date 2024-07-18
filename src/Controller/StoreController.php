@@ -9,12 +9,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Uid\Uuid;
 use OpenApi\Attributes as OA;
 use OpenApi\Attributes\{RequestBody, Property, JsonContent, MediaType, Schema};
-use Symfony\Component\Uid\Uuid;
 
 #[Route('api/store', name: 'app_api_store_')]
 class StoreController extends AbstractController
@@ -22,21 +21,18 @@ class StoreController extends AbstractController
     private EntityManagerInterface $manager;
     private StoreRepository $repository;
     private SerializerInterface $serializer;
-    private UrlGeneratorInterface $urlGenerator;
 
     public function __construct(
         EntityManagerInterface $manager,
         StoreRepository $repository,
         SerializerInterface $serializer,
-        UrlGeneratorInterface $urlGenerator
     ) {
         $this->manager = $manager;
         $this->repository = $repository;
         $this->serializer = $serializer;
-        $this->urlGenerator = $urlGenerator;
     }
 
-    #[Route(methods: 'POST')]
+    #[Route(name: 'new', methods: 'POST')]
     #[OA\Post(
         path:"/api/store",
         summary: "Créer une boutique",
@@ -105,24 +101,30 @@ class StoreController extends AbstractController
                         format: "date-time"
                     )]))
     )]
-    public function new(Request $request): JsonResponse 
+    #[OA\Response(
+        response: 404,
+        description: 'Erreur dans la création de la boutique'
+    )]
+    public function new(Request $request): JsonResponse
     {
         $store = $this->serializer->deserialize($request->getContent(), Store::class, 'json');
         $store->setCreatedAt(new DateTimeImmutable());
         $store->setUuid(Uuid::v4());
+        $store->setOpeningTime();
+        $store->setClosingTime();
 
         $this->manager->persist($store);
         $this->manager->flush();
 
-        $responseData = $this->serializer->serialize($store, 'json');
-        $location = $this->urlGenerator->generate('/{id}', ['id' => $store->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
-
-        return new JsonResponse($responseData, Response::HTTP_CREATED, ["Location" => $location], true);
+        return new JsonResponse(
+            ['store' => $store->getId()],
+            Response::HTTP_CREATED,
+        );
     }
 
-    #[Route('/{id}', name: 'show', methods: 'GET')]
+    #[Route(name: 'show', methods: 'GET')]
     #[OA\Get(
-        path:"/api/store/{id}",
+        path:"/api/store",
         summary: "Afficher une boutique par son id"
     )]
     #[OA\Parameter(
@@ -175,7 +177,7 @@ class StoreController extends AbstractController
         response: 404,
         description: 'Boutique non trouvée'
     )]
-    public function show(int $id): JsonResponse 
+    public function show(int $id): JsonResponse
     {
         $store = $this->repository->findOneBy(['id' => $id]);
         if (!$store) {
@@ -186,9 +188,9 @@ class StoreController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 
-    #[Route('/{id}', name: 'edit', methods: 'PUT')]
+    #[Route(name: 'edit', methods: 'PUT')]
     #[OA\Put(
-        path:"/api/store/{id}",
+        path:"/api/store",
         summary: "Modifier une boutique par son id",
         requestBody: new RequestBody(
             required: true,
@@ -240,10 +242,7 @@ class StoreController extends AbstractController
                         property: 'createdAt',
                         type: 'string',
                         format: 'date-time'
-                    )
-                ]
-            )
-        )
+                    )]))
     )]
     #[OA\Response(
         response: 404,
@@ -269,9 +268,9 @@ class StoreController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 
-    #[Route('/{id}', name: 'delete', methods: 'DELETE')]
+    #[Route(name: 'delete', methods: 'DELETE')]
     #[OA\Delete(
-        path:"/api/store/{id}",
+        path:"/api/store",
         summary: "Supprimer une boutique par son id"
     )]
     #[OA\Parameter(
@@ -283,13 +282,13 @@ class StoreController extends AbstractController
     )]
     #[OA\Response(
         response: 200,
-        description: 'Boutique supprimée avec succès',        
+        description: 'Boutique supprimée avec succès',
     )]
     #[OA\Response(
         response: 404,
         description: 'Impossible de supprimer la boutique'
     )]
-    public function delete(int $id): JsonResponse 
+    public function delete(int $id): JsonResponse
     {
         $store = $this->repository->findOneBy(['id' => $id]);
         if (!$store) {

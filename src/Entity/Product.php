@@ -41,7 +41,7 @@ class Product
     #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'product')]
     private ?Category $category = null;
     
-    #[ORM\ManyToMany(targetEntity: Store::class, mappedBy: 'products')] //Plusieurs jeux peuvent être dispo dans plusieurs boutique
+    #[ORM\ManyToMany(targetEntity: Store::class, mappedBy: 'product')] //Plusieurs jeux peuvent être dispo dans plusieurs boutique
     private Collection $stores;
     
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: Order::class)]

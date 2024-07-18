@@ -82,22 +82,26 @@ class SecurityController extends AbstractController
                         property: 'role',
                         type: 'string',
                         example: 'ROLE_USER'
-                    )]))
+                    )
+                ]
+            )
+        )
     )]
-    
-
-
-
+    #[OA\Response(
+        response: 404,
+        description: 'Impossible de créer un utilisateur'
+    )]
     public function register(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
-    {        
+    {
         $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
         $user->setPassword($passwordHasher->hashPassword($user, $user->getPassword()));
         $user->setCreatedAt(new DateTimeImmutable('2000-01-01'));
         $user->setUuid(Uuid::v4()); // Génération automatique de l'UUID
-        $user->setUsername($user->getEmail()); // Définir l'email comme nom d'utilisateur
+        $user->setUsername($user->getEmail()); // Définit l'email comme nom d'utilisateur
 
         $this->manager->persist($user);
         $this->manager->flush();
+        
         return new JsonResponse(
             ['user' => $user->getUserIdentifier(), 'apiToken' => $user->getApiToken(), 'roles' => $user->getRoles()],
             Response::HTTP_CREATED
@@ -146,7 +150,14 @@ class SecurityController extends AbstractController
                         property: 'role',
                         type: 'string',
                         example: 'ROLE_USER'
-                    )]))
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Impossible de se connecter'
     )]
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
@@ -200,56 +211,73 @@ class SecurityController extends AbstractController
         return new JsonResponse($responseData, Response::HTTP_OK, [], true);
     }
 
-    // #[Route('/account/edit', name: 'edit', methods: 'PUT')]
-    // #[OA\Put(
-    //     path: "/api/account/edit",
-    //     summary: "Modifier un ou plusieurs champs de son compte utilisateur",
-    //     requestBody: new RequestBody(
-    //         required: true,
-    //         description: "Données de connexion de l'utilisateur",
-    //         content: [new MediaType(mediaType: "application/json",
-    //         schema: new Schema(type: "object", properties: [new Property(
-    //             property: "username",
-    //             type: "string",
-    //             example: "adresse@mail.com"
-    //         ),
-    //         new Property(
-    //             property: "password",
-    //             type: "string",
-    //             example: "Mot de Passe"
-    //         )]))]
-    //     ),
-    // )]
-    // #[OA\Response(
-    //     response: 200,
-    //     description: 'Connexion réussie',
-    //     content: new OA\JsonContent(
-    //         type: 'array',
-    //         items: new OA\Items(
-    //             type: 'object',
-    //             properties: [
-    //                 new OA\Property(
-    //                     property: "username",
-    //                     type: "string",
-    //                     example: "Nom d'utilisateur"
-    //                 ),
-    //                 new OA\Property(
-    //                     property: 'apiToken',
-    //                     type: 'string',
-    //                     example: '31al4687357yoieu6876468e87'
-    //                 ),
-    //                 new OA\Property(
-    //                     property: 'role',
-    //                     type: 'string',
-    //                     example: 'ROLE_USER'
-    //                 )]))
-    // )]
-    // public function metoo(): JsonResponse // A supprimer !
-    // {
-    //     $user = $this->getUser();
+    #[Route('/account/edit', name: 'edit', methods: 'PUT')]
+    #[OA\Put(
+        path: "/api/account/edit",
+        summary: "Modifier un ou plusieurs champs de son compte utilisateur",
+        requestBody: new RequestBody(
+            required: true,
+            description: "Données de connexion de l'utilisateur",
+            content: [new MediaType(mediaType: "application/json",
+            schema: new Schema(type: "object", properties: [new Property(
+                property: "username",
+                type: "string",
+                example: "adresse@mail.com"
+            ),
+            new Property(
+                property: "password",
+                type: "string",
+                example: "Mot de Passe"
+            )]))]
+        ),
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Les informations ont bien été modifiées',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: "username",
+                        type: "string",
+                        example: "Nom d'utilisateur"
+                    ),
+                    new OA\Property(
+                        property: 'apiToken',
+                        type: 'string',
+                        example: '31al4687357yoieu6876468e87'
+                    ),
+                    new OA\Property(
+                        property: 'role',
+                        type: 'string',
+                        example: 'ROLE_USER'
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Impossible de modifier les informations'
+    )]
+    public function edit(int $id, Request $request): JsonResponse // A supprimer !
+    {
+        $user = $this->repository->findOneBy(['id' => $id]);
+        if (!$user) {
+            $user = $this->serializer->deserialize(
+                $request->getContent(),
+                user::class,
+                'json',
+                [AbstractNormalizer::OBJECT_TO_POPULATE => $user]
+            );
 
-    //     $responseData = $this->serializer->serialize($user, 'json');
+            $this->manager->flush();
 
-    //     return new JsonResponse($responseData, Response::HTTP_OK, [], true);
-    // }
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
+        }
+
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
+    }
 }

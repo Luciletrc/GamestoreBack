@@ -7,72 +7,391 @@ use App\Repository\ProductRepository;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Uid\Uuid;
+use OpenApi\Attributes as OA;
+use OpenApi\Attributes\{RequestBody, Property, JsonContent, MediaType, Schema};
 
 #[Route('api/product', name: 'app_api_product_')]
 class ProductController extends AbstractController
 {
-    #[Route(name: 'new', methods: 'POST')]
-    public function new(): Response 
+    public function __construct(private EntityManagerInterface $manager, private SerializerInterface $serializer)
     {
+    }
+
+    #[Route(name: 'new', methods: 'POST')]
+    #[OA\Post(
+        path:"/api/product",
+        summary: "Créer un nouvel article",
+        requestBody: new RequestBody(
+            required: true,
+            description: "Données de l'article à créer",
+            content: [new MediaType(mediaType: "application/json",
+            schema: new Schema(type: "object", properties: [new Property(
+                property: "name",
+                type: "string",
+                example: "Jeux n°1"
+            ),
+            new Property(
+                property: "description",
+                type: "string",
+                example: "Description de l'article"
+            ),
+            new Property(
+                property: "Pegi",
+                type: "integer",
+                example: "13"
+            ),
+            new Property(
+                property: "Stock",
+                type: "integer",
+                example: "4"
+            ),
+            new Property(
+                property: "Price",
+                type: "float",
+                format: "money_format"
+            ),
+            new Property(
+                property: "Category",
+                type: "string",
+                format: "action"
+            ),
+            new Property(
+                property: "Store",
+                type: "integer",
+                format: "2"
+            )]))]
+        ),
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Article créé avec succès',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: "id",
+                        type: "integer",
+                        example: "1"
+                    ),
+                    new OA\Property(
+                        property: "name",
+                        type: "string",
+                        example: "Jeux n°1"
+                    ),
+                    new Property(
+                        property: "description",
+                        type: "string",
+                        example: "Description de l'article"
+                    ),
+                    new Property(
+                        property: "Pegi",
+                        type: "integer",
+                        example: "13"
+                    ),
+                    new Property(
+                        property: "Stock",
+                        type: "integer",
+                        example: "4"
+                    ),
+                    new Property(
+                        property: "Price",
+                        type: "float",
+                        format: "money_format"
+                    ),
+                    new Property(
+                        property: "Category",
+                        type: "string",
+                        format: "action"
+                    ),
+                    new Property(
+                        property: "Store",
+                        type: "integer",
+                        format: "2"
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Erreur dans la création de l\'article'
+    )]
+    public function new(Request $request): JsonResponse
+    {
+        $pegi = array('3', '7', '12', '16', '18');
+
         $product = new Product();
-        $product->setName('Gamestore_product');
+        $product->setUuid(Uuid::v4());
         $product->setDescription('Cette description est géniale!');
-        $product->setPrice(new money_format());
+        $product->setPegi(array_rand($pegi));
+        $product->setStock(mt_rand(1, 5));
+        $product->setPrice(mt_rand(30, 60));
+
+        $storeIds = $request->get('Store');
+        $stores = $this->storeRepository->findBy(['id' => $storeIds]);
+        foreach ($stores as $store) {
+            $product->addStore($store);
+        }
+
+        $categoryId = $request->get('category');
+        $category = $this->storeRepository->findBy(['id' => $categoryId]);
+        $product->addCategory($category);
+    
+        $product = $this->serializer->deserialize($request->getContent(), Product::class, 'json', [AbstractNormalizer::OBJECT_TO_POPULATE => $product]);
+
         $product->setCreatedAt(new DateTimeImmutable());
 
-        // Tell Doctrine you want to (eventually) save the product (no queries yet)
         $this->manager->persist($product);
-        // Actually executes the queries (i.e. the INSERT query)
         $this->manager->flush();
 
-        return $this->json(
-            ['message' => "product resource created with {$product->getId()} id"],
+        return new JsonResponse(
+            ['product' => $product->getId()],
             Response::HTTP_CREATED,
         );
     }
 
-    #[Route('/show', name: 'show', methods: 'GET')]
-    public function show(int $id): Response 
+    #[Route(name: 'show', methods: 'GET')]
+    #[OA\Get(
+        path:"/api/product",
+        summary: "Afficher un article par son id",
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'ID de l\'article à afficher',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Article trouvé avec succès',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+                type: 'object',
+                properties: [
+                    new OA\Property(
+                        property: "id",
+                        type: "integer",
+                        example: "1"
+                    ),
+                    new OA\Property(
+                        property: "name",
+                        type: "string",
+                        example: "Nom de la catégorie"
+                    ),
+                    new Property(
+                        property: "description",
+                        type: "string",
+                        example: "Description de l'article"
+                    ),
+                    new Property(
+                        property: "Pegi",
+                        type: "integer",
+                        example: "13"
+                    ),
+                    new Property(
+                        property: "Stock",
+                        type: "integer",
+                        example: "4"
+                    ),
+                    new Property(
+                        property: "Price",
+                        type: "float",
+                        format: "money_format"
+                    ),
+                    new Property(
+                        property: "Category",
+                        type: "string",
+                        format: "action"
+                    ),
+                    new Property(
+                        property: "Store",
+                        type: "integer",
+                        format: "2"
+                    )
+                ]
+            )
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Article non trouvé'
+    )]
+    public function show(int $id, ProductRepository $productRepository): JsonResponse
     {
-        $product = $this->repository->findOneBy(['id' => $id]);
-
+        $product = $productRepository->findOneBy(['id' => $id]);
         if (!$product) {
-            throw $this->createNotFoundException("No product found for {$id} id");
+            $responseData = $this->serializer->serialize($product, 'json');
+            return new JsonResponse($responseData, Response::HTTP_OK, [], true);
         }
 
-        return $this->json(
-            ['message' => "A product was found : {$product->getName()} for {$product->getId()} id"]
-        );
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 
-    #[Route('/edit', name: 'edit', methods: 'PUT')]
-    public function edit(int $id): Response 
+    #[Route(name: 'edit', methods: 'PUT')]
+    #[OA\Put(
+        path: "/api/product",
+        summary: "Modifier un article par son id",
+        requestBody: new RequestBody(
+            required: true,
+            description: "Données de l\'article à modifier",
+            content: [new MediaType(mediaType: "application/json",
+            schema: new Schema(type: "object", properties: [new Property(
+                property: "name",
+                type: "string",
+                example: "Nom de l'article"
+            ),
+            new Property(
+                property: "description",
+                type: "string",
+                example: "Description de l'article"
+            ),
+            new Property(
+                property: "Pegi",
+                type: "integer",
+                example: "13"
+            ),
+            new Property(
+                property: "Stock",
+                type: "integer",
+                example: "4"
+            ),
+            new Property(
+                property: "Price",
+                type: "float",
+                format: "money_format"
+            ),
+            new Property(
+                property: "Category",
+                type: "string",
+                format: "action"
+            ),
+            new Property(
+                property: "Store",
+                type: "integer",
+                format: "2"
+            )]))]
+        ),
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'ID de l\'article à modifier',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Informations de l\'article modifiées avec succès',
+        content: new OA\JsonContent(
+            type: 'array',
+            items: new OA\Items(
+            type: 'object',
+            properties: [
+            new OA\Property(
+                property: "id",
+                type: "integer",
+                example: "1"
+            ),
+            new OA\Property(
+                property: "name",
+                type: "string",
+                example: "Nom de l\'article"
+            ),
+            new Property(
+                property: "description",
+                type: "string",
+                example: "Description de l'article"
+            ),
+            new Property(
+                property: "Pegi",
+                type: "integer",
+                example: "13"
+            ),
+            new Property(
+                property: "Stock",
+                type: "integer",
+                example: "4"
+            ),
+            new Property(
+                property: "Price",
+                type: "float",
+                format: "money_format"
+            ),
+            new Property(
+                property: "Category",
+                type: "string",
+                format: "action"
+            ),
+            new Property(
+                property: "Store",
+                type: "integer",
+                format: "2"
+            )])
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Echec de la modification'
+    )]
+    public function edit(int $id): JsonResponse 
     {
         $product = $this->repository->findOneBy(['id' => $id]);
-
         if (!$product) {
-            throw $this->createNotFoundException("No product found for {$id} id");
+            $product = $this->serializer->deserialize(
+                $request->getContent(),
+                Product::class,
+                'json',
+                [AbstractNormalizer::OBJECT_TO_POPULATE => $product]
+            );
+            $product->setUpdatedAt(new DateTimeImmutable());
+
+            $this->manager->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
 
-        $product->setName('product name updated');
-        $this->manager->flush();
-
-        return $this->redirectToRoute('app_api_product_show', ['id' => $product->getId()]);
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 
-    #[Route('/delete', name: 'delete', methods: 'DELETE')]
-    public function delete(int $id): Response 
+    #[Route(name: 'delete', methods: 'DELETE')]
+    #[OA\Delete(
+        path:"/api/product",
+        summary: "Supprimer un article par son id"
+    )]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        description: 'ID de l\'article à supprimer',
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Article supprimé avec succès',
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Impossible de supprimer l\'article'
+    )]
+    public function delete(int $id): JsonResponse
     {
         $product = $this->repository->findOneBy(['id' => $id]);
         if (!$product) {
-            throw $this->createNotFoundException("No product found for {$id} id");
+            $this->manager->remove($product);
+            $this->manager->flush();
+
+            return new JsonResponse(null, Response::HTTP_NO_CONTENT);
         }
 
-        $this->manager->remove($product);
-        $this->manager->flush();
-
-        return $this->json(['message' => "product resource deleted"], Response::HTTP_NO_CONTENT);
+        return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
 }
