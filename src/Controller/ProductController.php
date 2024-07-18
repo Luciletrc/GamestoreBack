@@ -394,4 +394,22 @@ class ProductController extends AbstractController
 
         return new JsonResponse(null, Response::HTTP_NOT_FOUND);
     }
+
+    
+    #[Route('/updateStock', name: 'update_stock', methods: 'PUT')]
+    public function updateStock(Request $request, Connection $connection): Response
+    {
+        $data = json_decode($request->getContent(), true);
+
+        $sql = 'UPDATE products SET stock = stock - 1 WHERE id = ? AND stock > 0';
+        $stmt = $connection->prepare($sql);
+        $stmt->bindValue(1, $data['id']);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            return new Response('Stock mis à jour avec succès !');
+        } else {
+            return new Response('Le produit est en rupture de stock.');
+        }
+    }
 }
