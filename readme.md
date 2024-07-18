@@ -73,5 +73,3 @@ $ bin/console debug:router
 $ bin/console debug:container
 $ bin/console debug:...
 ```
-
-[⬆️ Back to top]
