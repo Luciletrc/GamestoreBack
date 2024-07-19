@@ -73,3 +73,15 @@ $ bin/console debug:router
 $ bin/console debug:container
 $ bin/console debug:...
 ```
+## Continuous deployment
+
+This project can be easily hosted on Platform.SH :
+
+<p align="center">
+<a href="https://auth.api.platform.sh/"><img src="https://platform.sh/images/deploy/lg-blue.svg" alt="Deploy on Platform.sh" width="180px" /></a>
+</p>
+
+```bash
+$ symfony project:set-remote [PROJECT_ID]
+$ symfony cloud:environment:push
+```
