@@ -82,6 +82,6 @@ This project can be easily hosted on Platform.SH :
 </p>
 
 ```bash
-$ symfony project:set-remote [PROJECT_ID]
+$ symfony project:set-remote [ympwnsvumyfwe]
 $ symfony cloud:environment:push
 ```
